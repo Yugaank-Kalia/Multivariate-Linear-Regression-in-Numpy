@@ -1,10 +1,18 @@
 import numpy as np 
 from numpy.linalg import inv
+import matplotlib.pyplot as plt
 
 #load data
-data = np.loadtxt('machine-learning-ex1-2/ex1/ex1data1.txt' , delimiter = ',')
-x = data[:,0]
+data = np.loadtxt('machine-learning-ex1/ex1/ex1data1.txt' , delimiter = ',')
+x = np.c_[data[:,0]]
 y = np.c_[data[:,1]]
+
+def normalize(x):
+    
+    return (x - np.mean(x))/(np.amax(x)-np.amin(x))
+
+x = normalize(x)
+y = normalize(y)
 
 #add coloumn of bias
 X = np.c_[np.ones(data.shape[0]),x]
@@ -14,35 +22,71 @@ X = np.c_[np.ones(data.shape[0]),x]
 m = X.shape[0]
 n = X.shape[1]
 
+# plotting data using matplotlib.pyplot
+def visualize_data(x,y):
+    
+    plt.plot(x,y,'o')
+    plt.show()
+
+visualize_data(x,y)
+
 # iterations and alpha value initialization
-iter = 1500
-alpha = 0.03
+iter = 10000
+alpha = 0.003
 
 # setting the weights to 0
 theta = np.zeros((n,y.shape[1]))
 
 # function to generate cost
 def cost(theta,X,y):
-    sqrErr = (np.dot(X,theta)-y)**2
-    return (1./2*m)*np.sum(sqrErr)
-
-def feature_normalize(X):
-    global n
-    means = np.array([np.mean(X[:,i]) for i in range(n)])
-    std = np.array([np.std(X[:,i]) for i in range(n)])
-    normalize = (X-means)/std
     
-    return np.c_[normalize[:,1]]
+    sqrErr = (np.dot(X,theta)-y)**2
+    return np.sum(sqrErr)/(2*m)
 
 def gradDescent(theta,X,y):
-    global iter,alpha,m
-    for i in range(iter):
-        gradient = (1./m)*np.dot(X.T,np.dot(X,theta)-y)
-        theta = theta - alpha*gradient
+    
+    hyp = np.dot(X,theta)
+    cost_func = []
+    
+    for i in range(iter): 
 
-    return theta 
+        theta -= ((alpha/m)*(X.T.dot(hyp-y)))
+        cost_func.append(cost(theta,X,y))
+
+    return theta,cost_func
+
+theta,cost_func = gradDescent(theta,X,y)
+
+# plotting cost using matplotlib.pyplot
+def visualize_cost(x,y):
+    
+    y_axis = np.array(cost_func)
+    x_axis = np.array([i for i in range(iter)])
+    plt.scatter(x_axis,y_axis)
+    plt.show()
+
+visualize_cost(x,y)
+
+line = X.dot(theta)
+
+def visualize_line(x,y):
+    
+    plt.plot(x,y,'x')
+    plt.plot(x,line,'-')
+    plt.show()
+
+visualize_line(x,y)
+
+# print(np.array(cost_func))
 
 def normalEquation(X,y):
     return inv(X.T.dot(X)).dot(X.T).dot(y)
 
-print("Gradient Descent : ",gradDescent(theta,X,y),"\n\n\n\nNormal Equation : ",normalEquation(X,y))
+# theta = normalEquation(X,y)
+
+def predict(weights, input):
+    
+    X = np.c_[np.ones(1), input] # a row of biases is added to the the input
+    return (X.dot(weights))[0][0] # the weights computed using gradient descent are used to predict y
+
+print("Prediction : ",predict(theta, 50)*1000)
